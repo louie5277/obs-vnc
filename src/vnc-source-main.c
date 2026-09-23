@@ -1,9 +1,10 @@
 #include <obs-module.h>
 #include <obs.h>
+#include <callback/proc.h>
 #include <util/platform.h>
 #include <util/threading.h>
 #include "plugin-macros.generated.h"
-#include "vnc-source.h"
+#include "obs-vnc-source.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
@@ -20,6 +21,14 @@ static const char *vncsrc_get_name(void *unused)
 
 static void vncsrc_update(void *data, obs_data_t *settings);
 
+/* Expose the same reconnect operation used by the Properties dialog so that
+ * an OBS script can request a reconnect without UI automation. */
+static void reconnect_proc(void *data, calldata_t *params)
+{
+	UNUSED_PARAMETER(params);
+	vncsrc_request_reconnect((struct vnc_source *)data);
+}
+
 static void *vncsrc_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct vnc_source *src = bzalloc(sizeof(struct vnc_source));
@@ -31,6 +40,9 @@ static void *vncsrc_create(obs_data_t *settings, obs_source_t *source)
 	pthread_mutex_init(&src->interact_mutex, NULL);
 
 	vncsrc_update(src, settings);
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(ph, "void reconnect()", reconnect_proc, src);
 
 	vncsrc_thread_start(src);
 
