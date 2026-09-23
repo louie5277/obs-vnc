@@ -252,7 +252,8 @@ static void enable_tcp_keepalive(rfbClient *client)
 	keepalive.keepaliveinterval = 5000;
 
 	DWORD bytes_returned = 0;
-	if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive), NULL, 0, &bytes_returned, NULL, NULL) != 0) {
+	if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive), NULL, 0, &bytes_returned,
+		     NULL, NULL) != 0) {
 		blog(LOG_WARNING, "obs-vnc: failed to configure TCP keepalive (WSA error %d)", WSAGetLastError());
 	}
 }
