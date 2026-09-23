@@ -598,7 +598,7 @@ static inline int vkey_native_to_rfb(int vkey, int modifiers)
 		case 0x31: return ' ';
 		case 0x32: return '`'; // SDL_SCANCODE_GRAVE;
 	}
-	/* clang-format on */
+		/* clang-format on */
 #endif // __APPLE__
 
 	return 0;
