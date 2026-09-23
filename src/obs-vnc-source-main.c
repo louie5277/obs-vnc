@@ -5,12 +5,32 @@
 #include <util/threading.h>
 #include "plugin-macros.generated.h"
 #include "obs-vnc-source.h"
+#include <obs-frontend-api.h>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
 #define debug(fmt, ...) (void)0
 // #define debug(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
+
+static obs_hotkey_id reconnect_all_hotkey = OBS_INVALID_HOTKEY_ID;
+
+static void reconnect_all_hotkey_cb(void *data,
+                                    obs_hotkey_id id,
+                                    obs_hotkey_t *hotkey,
+                                    bool pressed)
+{
+    UNUSED_PARAMETER(data);
+    UNUSED_PARAMETER(id);
+    UNUSED_PARAMETER(hotkey);
+
+    if (!pressed)
+        return;
+
+    blog(LOG_INFO, "[obs-vnc] Reconnecting all VNC sources...");
+
+    // TODO: enumerate all VNC sources
+}
 
 static const char *vncsrc_get_name(void *unused)
 {
@@ -332,6 +352,13 @@ static struct obs_source_info vncsrc_src_info = {
 bool obs_module_load(void)
 {
 	obs_register_source(&vncsrc_src_info);
+
+	reconnect_all_hotkey =
+    obs_hotkey_register_frontend(
+        "obs_vnc_reconnect_all",
+        "Reconnect All VNC Sources",
+        reconnect_all_hotkey_cb,
+        NULL);
 
 	blog(LOG_INFO, "plugin loaded (version %s)", PLUGIN_VERSION);
 	return true;
