@@ -1,0 +1,87 @@
+name: Build Custom obs-vnc
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  windows_build:
+    runs-on: windows-2022
+
+    env:
+      visualStudio: 'Visual Studio 17 2022'
+      Configuration: 'RelWithDebInfo'
+      LIBVNCPath: ${{ github.workspace }}\libvncserver
+      OBSDeps: ${{ github.workspace }}\obs-build-dependencies\plugin-deps-x64
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download OBS development environment
+        id: obsdeps
+        uses: norihiro/obs-studio-devel-action@v2
+        with:
+          obs: 28
+          qt: false
+
+      - name: Restore libvncserver cache
+        id: libvncserver-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.LIBVNCPath }}
+          key: libvncserver-${{ hashFiles('ci/windows/install-libvncserver.sh') }}
+
+      - name: Build libvncserver
+        if: steps.libvncserver-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: ci/windows/install-libvncserver.sh
+        env:
+          CMakeOptA: x64
+          build_config: RelWithDebInfo
+
+      - name: Cache libvncserver
+        if: steps.libvncserver-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.LIBVNCPath }}
+          key: libvncserver-${{ hashFiles('ci/windows/install-libvncserver.sh') }}
+
+      - name: Build plugin
+        run: |
+          $CmakeArgs = @(
+            '-G', "${{ env.visualStudio }}"
+            '-DCMAKE_SYSTEM_VERSION=10.0.18363.657'
+            '-D', 'USE_PKG_CONFIG=OFF'
+            "-DLIBVNCCLIENT_INCLUDE_DIRS=${{ env.LIBVNCPath }}\include"
+            "-DLIBVNCCLIENT_STATIC_LIBRARY_DIRS=${{ env.LIBVNCPath }}"
+            "-DLIBVNCCLIENT_STATIC_LIBRARIES=${{ env.LIBVNCPath }}\RelWithDebInfo\vncclient.lib;${{ env.OBSDeps }}\lib\zlib.lib;${{ env.LIBVNCPath }}\deps\lzo\build\RelWithDebInfo\lzo2.lib;${{ env.LIBVNCPath }}\deps\libpng\RelWithDebInfo\libpng16_static.lib;${{ env.LIBVNCPath }}\deps\libjpeg\RelWithDebInfo\turbojpeg-static.lib;wsock32.lib;ws2_32.lib"
+          )
+
+          cmake -S . -B build `
+            ${{ steps.obsdeps.outputs.PLUGIN_CMAKE_OPTIONS_PS }} `
+            @CmakeArgs
+
+          cmake --build build --config RelWithDebInfo -j 4
+
+          cmake --install build `
+            --config RelWithDebInfo `
+            --prefix "$(Resolve-Path -Path .)/release"
+
+      - name: Package plugin
+        shell: bash
+        run: ci/windows/package-windows.sh 28
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-vnc-custom-windows
+          path: package/*
