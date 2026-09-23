@@ -1,5 +1,7 @@
 // A block below is copied from rfbproto.c.
 #ifdef _WIN32
+#include <winsock2.h>
+#include <mstcpip.h>
 
 #ifdef __STRICT_ANSI__
 #define _BSD_SOURCE
@@ -32,7 +34,7 @@
 #include <signal.h>
 #endif // ! _WIN32
 #include "plugin-macros.generated.h"
-#include "vnc-source.h"
+#include "obs-vnc-source.h"
 
 #define WHEEL_STEP 120 // 120 units = 15 degrees x 8
 
@@ -233,6 +235,38 @@ static void set_encodings_to_client(rfbClient *client, const volatile struct vnc
 	client->appData.qualityLevel = config->quality;
 }
 
+#ifdef _WIN32
+/*
+ * Configure a short TCP keepalive interval for the VNC socket. If the remote
+ * PC reboots or the TCP session becomes unreachable, Windows will eventually
+ * report the dead socket to the existing VNC polling path. That path then
+ * disconnects the client and the plugin's existing retry logic reconnects.
+ */
+static void enable_tcp_keepalive(rfbClient *client)
+{
+	if (!client)
+		return;
+
+	SOCKET sock = (SOCKET)client->sock;
+	BOOL enabled = TRUE;
+	if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&enabled, sizeof(enabled)) != 0) {
+		blog(LOG_WARNING, "obs-vnc: failed to enable TCP keepalive (WSA error %d)", WSAGetLastError());
+		return;
+	}
+
+	tcp_keepalive keepalive = {0};
+	keepalive.onoff = 1;
+	keepalive.keepalivetime = 5000;
+	keepalive.keepaliveinterval = 5000;
+
+	DWORD bytes_returned = 0;
+	if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive), NULL, 0, &bytes_returned,
+	             NULL, NULL) != 0) {
+		blog(LOG_WARNING, "obs-vnc: failed to configure TCP keepalive (WSA error %d)", WSAGetLastError());
+	}
+}
+#endif // _WIN32
+
 static inline rfbClient *rfbc_start(struct vnc_source *src)
 {
 	rfbClient *client;
@@ -278,6 +312,11 @@ static inline rfbClient *rfbc_start(struct vnc_source *src)
 		// If failed, client has already been freed.
 		return NULL;
 	}
+
+#ifdef _WIN32
+	/* Detect a remote-host reboot promptly instead of keeping a stale TCP session. */
+	enable_tcp_keepalive(client);
+#endif
 
 	return client;
 }
