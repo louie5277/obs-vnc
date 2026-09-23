@@ -242,7 +242,6 @@ static void set_encodings_to_client(rfbClient *client, const volatile struct vnc
  * report the dead socket to the existing VNC polling path. That path then
  * disconnects the client and the plugin's existing retry logic reconnects.
  */
-#ifdef _WIN32
 static void enable_tcp_keepalive(rfbClient *client)
 {
 	SOCKET sock = client->sock;
