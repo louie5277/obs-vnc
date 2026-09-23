@@ -72,16 +72,13 @@ jobs:
 
           cmake --build build --config RelWithDebInfo -j 4
 
-          cmake --install build `
-            --config RelWithDebInfo `
-            --prefix "$(Resolve-Path -Path .)/release"
+      - name: Find built DLL
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path . -Recurse -Filter "obs-vnc.dll" | Select-Object FullName
 
-      - name: Package plugin
-        shell: bash
-        run: ci/windows/package-windows.sh 28
-
-      - name: Upload Windows package
+      - name: Upload DLL
         uses: actions/upload-artifact@v4
         with:
           name: obs-vnc-custom-windows
-          path: package/*
+          path: build/RelWithDebInfo/obs-vnc.dll
