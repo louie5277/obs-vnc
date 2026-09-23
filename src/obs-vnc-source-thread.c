@@ -260,8 +260,8 @@ static void enable_tcp_keepalive(rfbClient *client)
 	keepalive.keepaliveinterval = 5000;
 
 	DWORD bytes_returned = 0;
-	if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive), NULL, 0, &bytes_returned,
-		     NULL, NULL) != 0) {
+	if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive), NULL, 0, &bytes_returned, NULL, NULL) !=
+	    0) {
 		blog(LOG_WARNING, "obs-vnc: failed to configure TCP keepalive (WSA error %d)", WSAGetLastError());
 	}
 }
@@ -606,7 +606,7 @@ static inline int vkey_native_to_rfb(int vkey, int modifiers)
 		case 0x31: return ' ';
 		case 0x32: return '`'; // SDL_SCANCODE_GRAVE;
 	}
-		/* clang-format on */
+	/* clang-format on */
 #endif // __APPLE__
 
 	return 0;
@@ -686,8 +686,7 @@ static inline void rfbc_interact_one(rfbClient *client, struct vncsrc_keymouse_s
 			/* clang-format off */
 			{INTERACT_CONTROL_KEY, XK_Control_L},
 			{INTERACT_SHIFT_KEY, XK_Shift_L},
-			{0, 0}
-			/* clang-format on */
+			{0, 0} /* clang-format on */
 		};
 		if (key)
 			for (int i = 0; mm[i][0]; i++) {
