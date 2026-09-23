@@ -242,30 +242,22 @@ static void set_encodings_to_client(rfbClient *client, const volatile struct vnc
  * report the dead socket to the existing VNC polling path. That path then
  * disconnects the client and the plugin's existing retry logic reconnects.
  */
+#ifdef _WIN32
 static void enable_tcp_keepalive(rfbClient *client)
 {
-	if (!client)
-		return;
+	SOCKET sock = client->sock;
 
-	SOCKET sock = (SOCKET)client->sock;
-	BOOL enabled = TRUE;
-	if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&enabled, sizeof(enabled)) != 0) {
-		blog(LOG_WARNING, "obs-vnc: failed to enable TCP keepalive (WSA error %d)", WSAGetLastError());
-		return;
-	}
-
-	tcp_keepalive keepalive = {0};
+	struct tcp_keepalive keepalive = {0};
 	keepalive.onoff = 1;
 	keepalive.keepalivetime = 5000;
 	keepalive.keepaliveinterval = 5000;
 
 	DWORD bytes_returned = 0;
-	if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive), NULL, 0, &bytes_returned, NULL, NULL) !=
-	    0) {
+	if (WSAIoctl(sock, SIO_KEEPALIVE_VALS, &keepalive, sizeof(keepalive), NULL, 0, &bytes_returned, NULL, NULL) != 0) {
 		blog(LOG_WARNING, "obs-vnc: failed to configure TCP keepalive (WSA error %d)", WSAGetLastError());
 	}
 }
-#endif // _WIN32
+#endif
 
 static inline rfbClient *rfbc_start(struct vnc_source *src)
 {
