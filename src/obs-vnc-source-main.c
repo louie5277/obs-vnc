@@ -15,21 +15,18 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
 static obs_hotkey_id reconnect_all_hotkey = OBS_INVALID_HOTKEY_ID;
 
-static void reconnect_all_hotkey_cb(void *data,
-                                    obs_hotkey_id id,
-                                    obs_hotkey_t *hotkey,
-                                    bool pressed)
+static void reconnect_all_hotkey_cb(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
 {
-    UNUSED_PARAMETER(data);
-    UNUSED_PARAMETER(id);
-    UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
 
-    if (!pressed)
-        return;
+	if (!pressed)
+		return;
 
-    blog(LOG_INFO, "[obs-vnc] Reconnecting all VNC sources...");
+	blog(LOG_INFO, "[obs-vnc] Reconnecting all VNC sources...");
 
-    // TODO: enumerate all VNC sources
+	// TODO: enumerate all VNC sources
 }
 
 static const char *vncsrc_get_name(void *unused)
