@@ -350,12 +350,8 @@ bool obs_module_load(void)
 {
 	obs_register_source(&vncsrc_src_info);
 
-	reconnect_all_hotkey =
-    obs_hotkey_register_frontend(
-        "obs_vnc_reconnect_all",
-        "Reconnect All VNC Sources",
-        reconnect_all_hotkey_cb,
-        NULL);
+	reconnect_all_hotkey = obs_hotkey_register_frontend("obs_vnc_reconnect_all", "Reconnect All VNC Sources",
+							    reconnect_all_hotkey_cb, NULL);
 
 	blog(LOG_INFO, "plugin loaded (version %s)", PLUGIN_VERSION);
 	return true;
