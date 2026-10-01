@@ -1,0 +1,32 @@
+name: Build OBS Watchdog - WM_NULL
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "watchdog/**"
+      - ".github/workflows/build-obs-watchdog-wmnull.yml"
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build native x64 EXE
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          if not exist build mkdir build
+          cl.exe /std:c++17 /EHsc /O2 /MT watchdog\obs_watchdog.cpp /Fe:build\OBSWatchdog.exe /link winhttp.lib
+
+      - name: Stage config
+        shell: pwsh
+        run: Copy-Item watchdog\config.ini build\config.ini
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBSWatchdog-WMNULL-x64
+          path: build\
