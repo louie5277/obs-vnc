@@ -1,4 +1,4 @@
-name: Build OBS Watchdog - WM_NULL
+name: Build OBS Watchdog - WM_NULL Adaptive Card
 
 on:
   workflow_dispatch:
@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: windows-2022
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,5 +29,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OBSWatchdog-WMNULL-x64
+          name: OBSWatchdog-WMNULL-AdaptiveCard-x64
           path: build\
